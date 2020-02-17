@@ -114,3 +114,89 @@ T = Tbase.dot(Tx(-d / 2)).dot(Rz(q0(1))).dot(Rz(t(1))).dot(Tx(L)).dot(Tx(t(2))).
 ).dot(Rx(t(5))).dot(Ry(t(6))).dot(Rz(t(7))).dot(Rz(q(1))).dot(Tx(l)).dot(
 Tx(t(8))).dot(Ty(t(9))).dot(Tz(t(10))).dot(Rx(t(11))).dot(Ry(t(12))).dot(Rz(t(13))).dot(Ttool)
 ```
+
+# MSA for tripteron manipulator
+## Goals
+Develop MSA model
+W = K * delta_t
+
+calculate the Cartesian stiffness matrix 
+Kc = D1 − C1 . A1(inv) . B1 <br/>
+Create deflection maps for 100N force in X, Y, Z directions<br/>
+We = K * delta_t @ We = 100, find delta_t
+
+## Steps
+* develop the MSA model
+![](https://github.com/mohamedsayed18/VJM_MSA/blob/master/msa_model.jpg)
+* write the equation for the model as follow<br/>
+every equation is wrote like a list of pairs the first element represent the delta_t and second element is the element to multiply for example 
+first equation is: 0 = Ar_star * d_t0 is written as this e1 = [(0, Ar_star)] <br/>
+At the fixtures
+```python
+e1 = [(0, Ar_star)]
+e2 = [(6, Ar_star)]
+e3 = [(12, Ar_star)]
+```
+At the end effector
+```python
+
+e4 = [(5,Ar_star), (18,Ar_star)]
+e5 = [(11,Ar_star), (18,Ar_star)]
+e5 = [(17,Ar_star), (18,Ar_star)]
+```
+The deflections
+```python
+e6 = [(1,Ar_star), (2,-Ar_star)]
+e7 = [(3,Ar_star), (4,-Ar_star)]
+e8 = [(7,Ar_star), (8,-Ar_star)]
+e9 = [(9,Ar_star), (10,-Ar_star)]
+e10 = [(13,Ar_star), (14,-Ar_star)]
+e11 = [(15,Ar_star), (16,-Ar_star)]
+```
+At wrenches
+```python
+eq12 = [(0,Ap.dot(k11)), (1,Ap.dot(k12))] #w0
+eq13 = [(0,Ap.dot(k21)), (1,Ap.dot(k22))]
+eq14 = [(2,Ap.dot(k11)), (3,Ap.dot(k12))] #w2
+eq15 = [(2,Ap.dot(k21)), (3,Ap.dot(k22))]
+eq16 = [(4,Ap.dot(k11)), (5,Ap.dot(k12))] #w4
+eq15 = [(4,Ap.dot(k21)), (5,Ap.dot(k22))]
+eq14 = [(6,Ap.dot(k11)), (7,Ap.dot(k12))]
+eq15 = [(6,Ap.dot(k21)), (7,Ap.dot(k22))]
+eq14 = [(8,Ap.dot(k11)), (9,Ap.dot(k12))]
+eq15 = [(8,Ap.dot(k21)), (9,Ap.dot(k22))]
+eq14 = [(10,Ap.dot(k11)), (11,Ap.dot(k12))]
+eq15 = [(2,Ap.dot(k21)), (3,Ap.dot(k22))]
+```
+To put this equations togther i created to functions<br/>
+**eq_into_matrix(eq)**<br/>
+it creates one row of the of the matrix given the equation 
+```python
+#:param eq:equation of the row
+#:return: m: np array of this row
+for i in eq:
+    m[:, i[0]*6:(i[0]*6)+6] = i[1]
+```
+**matrix_form(eq)**<br/>
+this function take list of all equations and return the stiffness
+```python
+"""
+stack single matrices vertically to create the stiffness matrix
+:param eq: list of all the equation
+:return: stiffness matrix
+"""
+w = np.empty((5, 114))
+for i in eq:
+    row = eq_into_matrix(i)
+    w = np.vstack((w, row)) # stack every equation into the matrix
+return w
+```
+**kc(m)**<br/>
+this function takes the m matrix and return the kc matrix
+```python
+A = m[:-1,:-1]
+B = m[:-1, -1]
+C = m[-1,:-1]
+D = m[-1,-1]
+return D - C @ np.linalg.inv(A) @ B
+```
