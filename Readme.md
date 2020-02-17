@@ -4,7 +4,7 @@ The goal is to create deflection maps for 100N force in X, Y, Z directions<br/>
 This is implemented in **showDef_lin()** which takes a force as a parameter and return deflection
 ### My approach
 I started by drawing the vjm model
-[!image](link to the photo)
+[!image](https://github.com/mohamedsayed18/VJM_MSA/vjm_model.jpg)
 
 then i started to follow the equations required to solve the problem using top bottom approach which is more intuitive for me
 * dt = K * F
